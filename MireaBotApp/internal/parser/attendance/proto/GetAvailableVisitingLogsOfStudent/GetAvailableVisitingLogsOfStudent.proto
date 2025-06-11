@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "mireaattendanceapp/proto/GetAvailableVisitingLogsOfStudent;proto";
+
+service TakeUUIDandETC {
+  rpc GetAvailableVisitingLogsOfStudent(GetAvailableVisitingLogsOfStudentRequest) returns (GetAvailableVisitingLogsOfStudentResponse);
+}
+
+message GetAvailableVisitingLogsOfStudentRequest {
+   //MUST BE EMPTY
+}
+
+message GetAvailableVisitingLogsOfStudentResponse {
+  string id = 1;
+  string name = 2;
+  string internal_id = 3;
+  bool flagged = 4;
+  string encoded_meta = 5;
+}
+
+message GetAvailableVisitingLogsOfStudentResponseList {
+  repeated GetAvailableVisitingLogsOfStudentResponse items = 1;
+}

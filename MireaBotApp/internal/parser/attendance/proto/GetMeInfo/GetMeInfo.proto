@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option go_package = "mireaattendanceapp/proto/GetMeInfo;proto";
+
+service TakeUserData {
+  rpc GetMeInfo(GetMeInfoRequest) returns (GetMeInfoResponse);
+}
+
+message GetMeInfoRequest {
+  string url = 1;
+  int32 version = 3;
+}
+
+message GetMeInfoResponse {
+  //Пока ниче не вписываю, так как не понимаю как декодировать в структуру
+}

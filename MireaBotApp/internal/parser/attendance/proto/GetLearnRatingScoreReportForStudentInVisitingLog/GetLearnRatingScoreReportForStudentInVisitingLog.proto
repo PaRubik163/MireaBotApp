@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "mireaattendanceapp/proto/GetLearnRatingScoreReportForStudentInVisitingLog;proto";
+
+service GetLearnRatingScoreReportForStudentInVisitingLog{
+    rpc GetLearnRatingScoreReportForStudentInVisitingLog(GetScoreAndVisitngRequest) returns (GetScoreAndVisitngResponse);
+}
+
+message GetScoreAndVisitngRequest{
+    string id = 1; //eee7152e-a195-4696-b37b-cc83da0afe59
+}
+
+message GetScoreAndVisitngResponse{
+    string name = 1;
+    double current_control = 2;  // Текущий контроль (Макс. 40)
+    double attendance = 3;       // Посещения (Макс. 30)
+    double achievements = 4;     // Достижения (Макс. 10)
+    double semester_control = 5; // Семестровый контроль (Макс. 30)
+    double total = 6;
+}
