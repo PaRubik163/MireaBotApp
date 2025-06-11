@@ -1,18 +1,29 @@
 package bot
+
 import (
-	"strings"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"log"
 )
 
-func IsGoodLogin(login string) bool {
-	if !strings.Contains(login, "@edu.mirea.ru") {
-		return false
+func SendStartButtons(bot *tgbotapi.BotAPI, chatID int64) {
+	login := tgbotapi.NewInlineKeyboardButtonData("Авторизоваться", "login")
+
+	row := tgbotapi.NewInlineKeyboardRow(login)
+
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(row)
+
+	msg := tgbotapi.NewMessage(chatID, "👋Рады тебя видеть в MireaScore!\n\n📌Что делает этот бот?\n🤖Этот бот авторизирует тебя на сайте МИРЭА\n\n🔢Присылает баллы по каждой дисциплине\n\n🤝P.S Исключительно для просмотра успеваемости!")
+	msg.ReplyMarkup = keyboard
+
+	if _, err := bot.Send(msg); err != nil {
+		log.Fatalf("Ошибка отправки /start сообщения")
 	}
-	return true
 }
 
-func IsGoodPassword(password string) bool {
-	if len(password) < 8{
-		return false
-	}
-	return true
+func buttonsForGoodAutarization() tgbotapi.InlineKeyboardMarkup {
+	oneMore, checkAnother := tgbotapi.NewInlineKeyboardButtonData("Посмотреть баллы", "login"), tgbotapi.NewInlineKeyboardButtonData("Посмотреть баллы друга", "update")
+
+	rows := tgbotapi.NewInlineKeyboardRow(oneMore, checkAnother)
+
+	return tgbotapi.NewInlineKeyboardMarkup(rows)
 }

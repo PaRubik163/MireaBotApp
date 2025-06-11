@@ -1,11 +1,11 @@
 package bot
 
-// Надо придумать как рзабить эту функцию
 import (
 	"fmt"
 	"log"
 	attend "mireabot/internal/parser/attendance"
 	lk "mireabot/internal/parser/lksMirea"
+	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -13,22 +13,9 @@ import (
 	lks "mireabot/internal/parser/lksMirea"
 )
 
-func HandlerStart(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
-	welcomeText := fmt.Sprintf("👋Рады тебя видеть в MireaScore!\n\n📌Что делает этот бот?\n🤖Этот бот авторизирует тебя на сайте МИРЭА\n\n🔢Присылает баллы по каждой дисциплине\nВведи команду /login для работы ЛКС\n\n🤝P.S Исключительно для просмотра успеваемости!")
-
-	reply := tgbotapi.NewMessage(msg.Chat.ID, welcomeText)
-	_, err := bot.Send(reply)
-
-	if err != nil {
-		log.Fatalf("Ошибка отправки сообщения HandlerStart", err)
-	}
-}
-
 func HandlerLogin(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, login, password string) bool {
 	person := &lk.Person{}
-	if !IsGoodLogin(login) || !IsGoodPassword(password) {
-		reply := tgbotapi.NewMessage(msg.Chat.ID, "❌Невалидный логин или пароль\n🙏Пожалуйста, проверьте данные и нажмите /update")
-		bot.Send(reply)
+	if !isGoodLogin(login) || !isGoodPassword(password) {
 		return false
 	}
 	if !lks.Loginned(person, login, password) {
@@ -101,19 +88,35 @@ func HandlerLogin(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, login, password s
 			sum := current_control + attendance
 			//Окрашивание
 			if sum >= 40 {
-				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "🟢")
+				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "✅")
 			}
 			if sum < 40 && sum >= 25 {
-				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "🟡")
+				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "🔶")
 			}
 			if sum < 25 {
-				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "🔴")
+				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "🚫")
 			}
 		}
 
-		lastReply := tgbotapi.NewMessage(msg.Chat.ID, message+"\n\n👉Просто нажмите /login для просмотра баллов")
+		keyboard := buttonsForGoodAutarization
+		lastReply := tgbotapi.NewMessage(msg.Chat.ID, message+"\n\n👉Логин: "+login+"\n🤐Пароль: "+password)
+		lastReply.ReplyMarkup = keyboard()
 		bot.Send(lastReply)
 
 		return true
 	}
+}
+
+func isGoodLogin(login string) bool {
+	if !strings.Contains(login, "@edu.mirea.ru") {
+		return false
+	}
+	return true
+}
+
+func isGoodPassword(password string) bool {
+	if len(password) < 8 {
+		return false
+	}
+	return true
 }

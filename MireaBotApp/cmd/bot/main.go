@@ -15,8 +15,6 @@ type UserState struct {
 	password         string
 	awaitingLogin    bool
 	awaitingPassword bool
-	updateLogin      bool
-	uppdatePassword  bool
 }
 
 var userStates = make(map[int64]*UserState)
@@ -34,7 +32,7 @@ func main() {
 	}
 
 	bot, err := tgbotapi.NewBotAPI(botToken)
-	//bot.Debug = true
+	bot.Debug = true
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,88 +45,80 @@ func main() {
 	updates := bot.GetUpdatesChan(u)
 
 	for update := range updates {
-		if update.Message == nil {
-			continue
+
+		// Обработка сообщений от пользователя (текст)
+		if update.Message != nil {
+			chatID := update.Message.Chat.ID
+			text := update.Message.Text
+
+			// Если пользователь новый — создаём для него состояние
+			if _, exists := userStates[chatID]; !exists {
+				userStates[chatID] = &UserState{}
+			}
+			user := userStates[chatID]
+
+			switch {
+			case user.awaitingLogin:
+				user.login = text
+				user.awaitingLogin = false
+				user.awaitingPassword = true
+
+				bot.Send(tgbotapi.NewMessage(chatID, "🔒 Теперь введите пароль:"))
+
+			case user.awaitingPassword:
+				user.password = text
+				user.awaitingPassword = false
+
+				//// Вызываем обработчик авторизации
+				if handler.HandlerLogin(bot, update.Message, user.login, user.password) {
+					database.Insert(update.Message.From.UserName, user.login, user.password)
+				} else {
+					errButton := tgbotapi.NewInlineKeyboardButtonData("Попробовать ещё раз", "login")
+					row := tgbotapi.NewInlineKeyboardRow(errButton)
+					keyboard := tgbotapi.NewInlineKeyboardMarkup(row)
+
+					reply := tgbotapi.NewMessage(update.Message.Chat.ID, "❌ОШИБКА АВТОРИЗАЦИИ\n\n🤔Невалидный логин или пароль\n🙏Пожалуйста, проверьте данные и попробуйте ещё раз")
+					reply.ReplyMarkup = keyboard
+
+					if _, err := bot.Send(reply); err != nil {
+						log.Fatalf("Ошибка отправки сообщения об ошибке авторизации", err)
+					}
+				}
+
+			case text == "/start":
+				handler.SendStartButtons(bot, chatID)
+
+			default:
+				bot.Send(tgbotapi.NewMessage(chatID, "Напиши /start или нажми кнопку"))
+			}
 		}
 
-		chatID := update.Message.Chat.ID
-		messageText := update.Message.Text
+		// Обработка нажатий на кнопки
+		if update.CallbackQuery != nil {
+			callback := update.CallbackQuery
+			chatID := callback.Message.Chat.ID
 
-		// Если пользователя нет в мапе — создаём запись
-		if _, exists := userStates[chatID]; !exists {
-			userStates[chatID] = &UserState{}
-		}
+			if _, exists := userStates[chatID]; !exists {
+				userStates[chatID] = &UserState{}
+			}
+			user := userStates[chatID]
 
-		user := userStates[chatID]
+			switch callback.Data {
+			case "login":
+				database.InitDB()
+				if !database.IsExists(callback.From.UserName) {
+					user.awaitingLogin = true
+					bot.Send(tgbotapi.NewMessage(chatID, "🔑Введите логин МИРЭА:"))
+				} else {
+					l, p := database.Select(callback.From.UserName)
+					handler.HandlerLogin(bot, callback.Message, l, p)
+				}
 
-		switch {
-		//Если пользователь отправил старт
-		case messageText == "/start":
-			handler.HandlerStart(bot, update.Message)
-
-		// Если пользователь отправил /login
-		case messageText == "/login":
-			database.InitDB()
-			if !database.IsExists(update.Message.From.UserName) {
-				user.awaitingLogin = true
-				msg := tgbotapi.NewMessage(chatID, "🔑Введите логин:")
-				bot.Send(msg)
-			} else {
-				l, p := database.Select(update.Message.From.UserName)
-				handler.HandlerLogin(bot, update.Message, l, p)
+			default:
+				bot.Send(tgbotapi.NewMessage(chatID, "Непонятное действие"))
 			}
 
-		// Если бот ждёт логин
-		case user.awaitingLogin:
-			user.login = messageText
-			user.awaitingLogin = false
-			user.awaitingPassword = true
-			msg := tgbotapi.NewMessage(chatID, "🔒Теперь введите пароль:")
-			bot.Send(msg)
-
-		// Если бот ждёт пароль → запускаем авторизацию
-		case user.awaitingPassword:
-			user.password = messageText
-			user.awaitingPassword = false
-
-			// Вызываем обработчик авторизации
-			if handler.HandlerLogin(bot, update.Message, user.login, user.password) {
-				database.Insert(update.Message.From.UserName, user.login, user.password)
-			} else {
-				reply := tgbotapi.NewMessage(update.Message.Chat.ID, "❌Ошибка авторизации, проверьте данные и нажмите /login")
-				bot.Send(reply)
-			}
-
-		case messageText == "/update":
-			database.InitDB()
-			if database.IsExists(update.Message.From.UserName) {
-				user.updateLogin = true
-				msg := tgbotapi.NewMessage(chatID, "🔑Введите логин:")
-				bot.Send(msg)
-			}
-		case user.updateLogin:
-			user.login = messageText
-			user.updateLogin = false
-			user.uppdatePassword = true
-			msg := tgbotapi.NewMessage(chatID, "🔒Теперь введите пароль:")
-			bot.Send(msg)
-
-		// Если бот ждёт пароль → запускаем авторизацию
-		case user.uppdatePassword:
-			user.password = messageText
-			user.uppdatePassword = false
-
-			// Вызываем обработчик авторизации
-			if handler.HandlerLogin(bot, update.Message, user.login, user.password) {
-				database.Update(update.Message.From.UserName, user.login, user.password)
-			} else {
-				reply := tgbotapi.NewMessage(update.Message.Chat.ID, "❌Ошибка авторизации, проверьте данные и нажмите /login")
-				bot.Send(reply)
-			}
-		// Любое другое сообщение
-		default:
-			msg := tgbotapi.NewMessage(chatID, "❗️Отправьте /login для БРС.")
-			bot.Send(msg)
+			bot.Request(tgbotapi.NewCallback(callback.ID, ""))
 		}
 	}
 }
