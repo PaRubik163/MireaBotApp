@@ -120,3 +120,12 @@ func isGoodPassword(password string) bool {
 	}
 	return true
 }
+
+func BadAutorization(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
+	reply := tgbotapi.NewMessage(msg.Chat.ID, "❌Неверные данные, проверьте логин и/или пароль!")
+	reply.ReplyMarkup = buttonsForBadAutarization()
+
+	if _, err := bot.Send(reply); err != nil {
+		log.Fatalf("Ошибка отправки сообщения", err)
+	}
+}

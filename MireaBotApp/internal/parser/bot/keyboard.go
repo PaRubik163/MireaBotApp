@@ -27,3 +27,13 @@ func buttonsForGoodAutarization() tgbotapi.InlineKeyboardMarkup {
 
 	return tgbotapi.NewInlineKeyboardMarkup(rows)
 }
+
+func buttonsForBadAutarization() tgbotapi.InlineKeyboardMarkup {
+	checkMyScore, returnOneMore := tgbotapi.NewInlineKeyboardButtonData("Посмотреть свои баллы", "login"), tgbotapi.NewInlineKeyboardButtonData("Попробовать ещё раз", "update")
+
+	rows := tgbotapi.NewInlineKeyboardRow(checkMyScore, returnOneMore)
+
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(rows)
+
+	return keyboard
+}
