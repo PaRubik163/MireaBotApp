@@ -33,7 +33,7 @@ func main() {
 	}
 
 	bot, err := tgbotapi.NewBotAPI(botToken)
-	bot.Debug = true
+	//bot.Debug = true
 	if err != nil {
 		log.Fatal(err)
 	}

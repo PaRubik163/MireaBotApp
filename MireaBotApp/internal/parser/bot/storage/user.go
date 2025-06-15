@@ -1,7 +1,6 @@
 package storage
+
 //Сделать шифрование паролей
-//Добавить проверку валидности данных
-//Добавить функционал с UPDATE
 import (
 	"log"
 )
@@ -16,7 +15,7 @@ func IsExists(tgID string) bool {
 
 	stmt.QueryRow(tgID).Scan(&exists)
 
-	if exists != 1{
+	if exists != 1 {
 		return false
 	}
 
@@ -25,30 +24,30 @@ func IsExists(tgID string) bool {
 
 func Insert(tgId, login, password string) {
 	stmt, err := DB.Prepare("INSERT INTO user (tg, login, password) VALUES (?, ?, ?)")
-	
-	if err != nil{
+
+	if err != nil {
 		log.Fatalf("Ошибка INSERT запроса")
 	}
-	
+
 	_, err = stmt.Exec(tgId, login, password)
 
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Ошибка INSERT.exec() запроса")
 	}
 
-	log.Println("Успешный INSERT запрос добавлен",tgId, login)
+	log.Println("Успешный INSERT запрос добавлен", tgId, login)
 }
 
-func Select(tgID string) (string,string) {
+func Select(tgID string) (string, string) {
 	var login, password string
 
 	err := DB.QueryRow("SELECT login,password FROM user WHERE tg = ?", tgID).Scan(&login, &password)
 
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Ошибка Select запроса")
 	}
 
-	if login == "" || password == ""{
+	if login == "" || password == "" {
 		return "", ""
 	}
 
@@ -59,12 +58,12 @@ func Select(tgID string) (string,string) {
 func Update(tgID string, newlogin, newpassword string) bool {
 	stmt, err := DB.Prepare("UPDATE user SET login = ?, password = ? WHERE tg = ?")
 
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Ошибка UPDATE запроса")
 	}
 
 	_, err = stmt.Exec(newlogin, newpassword, tgID)
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Ошибка UPDATE.EXEC() запроса")
 		return false
 	}

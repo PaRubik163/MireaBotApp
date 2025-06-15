@@ -21,7 +21,7 @@ func SendStartButtons(bot *tgbotapi.BotAPI, chatID int64) {
 }
 
 func buttonsForGoodAutarization() tgbotapi.InlineKeyboardMarkup {
-	oneMore, checkAnother := tgbotapi.NewInlineKeyboardButtonData("Посмотреть баллы", "login"), tgbotapi.NewInlineKeyboardButtonData("Посмотреть баллы друга", "update")
+	oneMore, checkAnother := tgbotapi.NewInlineKeyboardButtonData("Мои баллы", "login"), tgbotapi.NewInlineKeyboardButtonData("Баллы друга", "update")
 
 	rows := tgbotapi.NewInlineKeyboardRow(oneMore, checkAnother)
 
