@@ -19,6 +19,7 @@ type UserState struct {
 }
 
 var userStates = make(map[int64]*UserState)
+var key []byte
 
 func main() {
 	err := godotenv.Load()
@@ -27,12 +28,14 @@ func main() {
 	}
 
 	botToken := os.Getenv("BOT_TOKEN")
+	keyStr := os.Getenv("key")
 
-	if botToken == "" {
-		log.Fatal("Short BotToken")
+	if botToken == "" || len(keyStr) < 32 {
+		log.Fatal("Short BotToken or key error!")
 	}
-
+	key = []byte(keyStr)
 	bot, err := tgbotapi.NewBotAPI(botToken)
+
 	//bot.Debug = true
 	if err != nil {
 		log.Fatal(err)
@@ -73,10 +76,10 @@ func main() {
 				//// Вызываем обработчик авторизации
 				if handler.HandlerLogin(bot, update.Message, user.login, user.password) {
 					if user.isUpdate {
-						database.Update(update.Message.From.UserName, user.login, user.password)
+						database.Update(update.Message.From.UserName, user.login, user.password, key)
 						user.isUpdate = false
 					} else {
-						database.Insert(update.Message.From.UserName, user.login, user.password)
+						database.Insert(update.Message.From.UserName, user.login, user.password, key)
 					}
 				} else {
 					if user.isUpdate {
@@ -120,7 +123,7 @@ func main() {
 					user.awaitingLogin = true
 					bot.Send(tgbotapi.NewMessage(chatID, "🔑Введите логин МИРЭА:"))
 				} else {
-					l, p := database.Select(callback.From.UserName)
+					l, p := database.Select(callback.From.UserName, key)
 					handler.HandlerLogin(bot, callback.Message, l, p)
 				}
 			case "update":

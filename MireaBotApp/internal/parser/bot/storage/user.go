@@ -1,7 +1,11 @@
 package storage
 
-//Сделать шифрование паролей
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
+	"io"
 	"log"
 )
 
@@ -22,14 +26,16 @@ func IsExists(tgID string) bool {
 	return true
 }
 
-func Insert(tgId, login, password string) {
+func Insert(tgId, login, password string, key []byte) {
 	stmt, err := DB.Prepare("INSERT INTO user (tg, login, password) VALUES (?, ?, ?)")
 
 	if err != nil {
 		log.Fatalf("Ошибка INSERT запроса")
 	}
 
-	_, err = stmt.Exec(tgId, login, password)
+	cipherPassword := encrypt(password, key)
+
+	_, err = stmt.Exec(tgId, login, cipherPassword)
 
 	if err != nil {
 		log.Fatalf("Ошибка INSERT.exec() запроса")
@@ -38,31 +44,36 @@ func Insert(tgId, login, password string) {
 	log.Println("Успешный INSERT запрос добавлен", tgId, login)
 }
 
-func Select(tgID string) (string, string) {
-	var login, password string
+func Select(tgID string, key []byte) (string, string) {
+	var login, encPassword string
 
-	err := DB.QueryRow("SELECT login,password FROM user WHERE tg = ?", tgID).Scan(&login, &password)
+	err := DB.QueryRow("SELECT login,password FROM user WHERE tg = ?", tgID).Scan(&login, &encPassword)
 
 	if err != nil {
 		log.Fatalf("Ошибка Select запроса")
 	}
+
+	password := decrypt(encPassword, key)
 
 	if login == "" || password == "" {
 		return "", ""
 	}
 
 	log.Println("Успешный SELECT запрос вытащен", tgID, login)
+
 	return login, password
 }
 
-func Update(tgID string, newlogin, newpassword string) bool {
+func Update(tgID string, newlogin, newpassword string, key []byte) bool {
 	stmt, err := DB.Prepare("UPDATE user SET login = ?, password = ? WHERE tg = ?")
 
 	if err != nil {
 		log.Fatalf("Ошибка UPDATE запроса")
 	}
 
-	_, err = stmt.Exec(newlogin, newpassword, tgID)
+	cipherNewPassword := encrypt(newpassword, key)
+
+	_, err = stmt.Exec(newlogin, cipherNewPassword, tgID)
 	if err != nil {
 		log.Fatalf("Ошибка UPDATE.EXEC() запроса")
 		return false
@@ -71,4 +82,51 @@ func Update(tgID string, newlogin, newpassword string) bool {
 	log.Print("Успешный UPDATE запрос измене пользователь", tgID)
 
 	return true
+}
+
+func encrypt(text string, key []byte) string {
+	plaintext := []byte(text)
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		log.Fatalf("Ошибка NewCipher encript")
+	}
+
+	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
+	iv := ciphertext[:aes.BlockSize]
+
+	// Заполняем IV случайными байтами
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		log.Fatal("Ошибка io.Readfull")
+	}
+
+	stream := cipher.NewCFBEncrypter(block, iv)
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
+
+	return base64.URLEncoding.EncodeToString(ciphertext)
+}
+
+func decrypt(cryptoText string, key []byte) string {
+	ciphertext, err := base64.URLEncoding.DecodeString(cryptoText)
+	if err != nil {
+		log.Fatal("Ошибка base64.DecodetoString()")
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		log.Fatal("Ошибка newChiper decode")
+	}
+
+	if len(ciphertext) < aes.BlockSize {
+		log.Println("ciphertext очень короткий")
+		return ""
+	}
+
+	iv := ciphertext[:aes.BlockSize]
+	ciphertext = ciphertext[aes.BlockSize:]
+
+	stream := cipher.NewCFBDecrypter(block, iv)
+	stream.XORKeyStream(ciphertext, ciphertext)
+
+	return string(ciphertext)
 }
