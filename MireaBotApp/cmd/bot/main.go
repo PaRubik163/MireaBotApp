@@ -118,21 +118,31 @@ func main() {
 
 			switch callback.Data {
 			case "login":
-				database.InitDB()
-				if !database.IsExists(callback.From.UserName) {
-					user.awaitingLogin = true
-					bot.Send(tgbotapi.NewMessage(chatID, "🔑Введите логин МИРЭА:"))
-				} else {
-					l, p := database.Select(callback.From.UserName, key)
-					handler.HandlerLogin(bot, callback.Message, l, p)
-				}
+				go func() { //для параллельной обработки пользователей
+					if r := recover(); r != nil {
+						log.Println("panic в момент login")
+					}
+					database.InitDB()
+					if !database.IsExists(callback.From.UserName) {
+						user.awaitingLogin = true
+						bot.Send(tgbotapi.NewMessage(chatID, "🔑Введите логин МИРЭА:"))
+					} else {
+						l, p := database.Select(callback.From.UserName, key)
+						handler.HandlerLogin(bot, callback.Message, l, p)
+					}
+				}()
 			case "update":
-				database.InitDB()
-				if database.IsExists(callback.From.UserName) {
-					user.awaitingLogin = true
-					user.isUpdate = true
-					bot.Send(tgbotapi.NewMessage(chatID, "🔑Введите логин друга:"))
-				}
+				go func() { //для параллельной обработки пользователей
+					if r := recover(); r != nil {
+						log.Println("panic во время update")
+					}
+					database.InitDB()
+					if database.IsExists(callback.From.UserName) {
+						user.awaitingLogin = true
+						user.isUpdate = true
+						bot.Send(tgbotapi.NewMessage(chatID, "🔑Введите логин друга:"))
+					}
+				}()
 			default:
 				bot.Send(tgbotapi.NewMessage(chatID, "Непонятное действие"))
 			}
