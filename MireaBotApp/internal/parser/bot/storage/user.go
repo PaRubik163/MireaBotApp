@@ -79,7 +79,7 @@ func Update(tgID string, newlogin, newpassword string, key []byte) bool {
 		return false
 	}
 
-	log.Print("Успешный UPDATE запрос измене пользователь", tgID)
+	log.Print("Успешный UPDATE запрос измене пользователь ", tgID)
 
 	return true
 }
