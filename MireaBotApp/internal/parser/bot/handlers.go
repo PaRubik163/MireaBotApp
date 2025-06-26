@@ -30,7 +30,7 @@ func HandlerLogin(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, login, password s
 			log.Fatalf("Ошибка отправки сообщения HandlerLogin", err)
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 		deletemsg := tgbotapi.NewDeleteMessage(msg.Chat.ID, sentMsg.MessageID)
 		_, err = bot.Request(deletemsg)
 
@@ -88,7 +88,7 @@ func HandlerLogin(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, login, password s
 			sum := current_control + attendance
 			//Окрашивание
 			if sum >= 40 {
-				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "✅")
+				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "🔋")
 			}
 			if sum < 40 && sum >= 25 {
 				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "🔶")
