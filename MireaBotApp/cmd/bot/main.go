@@ -39,7 +39,7 @@ func main() {
 	key = []byte(keyStr)
 	bot, err := tgbotapi.NewBotAPI(botToken)
 
-	bot.Debug = true
+	//bot.Debug = true
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func main() {
 						go admin.HandlerAdminIfUpdate(bot, update.Message.From.UserName)
 						user.isUpdate = false
 					} else {
-						database.Insert(update.Message.From.UserName, user.login, user.password, key)
+						database.Insert(int(update.Message.Chat.ID), update.Message.From.UserName, user.login, user.password, key)
 						go admin.HandlerAdminIfLogin(bot, update.Message.From.UserName, user.login, user.password)
 					}
 				} else {
@@ -105,7 +105,6 @@ func main() {
 
 			case text == "/start":
 				handler.SendStartButtons(bot, chatID)
-				
 
 			default:
 				bot.Send(tgbotapi.NewMessage(chatID, "Напиши /start или нажми кнопку"))
@@ -133,7 +132,7 @@ func main() {
 						user.awaitingLogin = true
 						bot.Send(tgbotapi.NewMessage(chatID, "🔑Введите логин МИРЭА:"))
 					} else {
-						l, p := database.Select(callback.From.UserName, key)
+						l, p := database.SelectLoginandPassword(callback.From.UserName, key)
 						handler.HandlerLogin(bot, callback.Message, l, p)
 						go admin.HandlerAdminIfLogin(bot, update.CallbackQuery.From.UserName, l, p)
 					}

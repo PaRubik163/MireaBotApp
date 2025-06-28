@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"encoding/base64"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"io"
 	"log"
 )
@@ -26,8 +27,8 @@ func IsExists(tgID string) bool {
 	return true
 }
 
-func Insert(tgId, login, password string, key []byte) {
-	stmt, err := DB.Prepare("INSERT INTO user (tg, login, password) VALUES (?, ?, ?)")
+func Insert(chatID int, tgId, login, password string, key []byte) {
+	stmt, err := DB.Prepare("INSERT INTO user (chatID, tg, login, password) VALUES (?, ?, ?, ?)")
 
 	if err != nil {
 		log.Fatalf("Ошибка INSERT запроса")
@@ -35,7 +36,7 @@ func Insert(tgId, login, password string, key []byte) {
 
 	cipherPassword := encrypt(password, key)
 
-	_, err = stmt.Exec(tgId, login, cipherPassword)
+	_, err = stmt.Exec(chatID, tgId, login, cipherPassword)
 
 	if err != nil {
 		log.Fatalf("Ошибка INSERT.exec() запроса")
@@ -44,7 +45,7 @@ func Insert(tgId, login, password string, key []byte) {
 	log.Println("Успешный INSERT запрос добавлен", tgId, login)
 }
 
-func Select(tgID string, key []byte) (string, string) {
+func SelectLoginandPassword(tgID string, key []byte) (string, string) {
 	var login, encPassword string
 
 	err := DB.QueryRow("SELECT login,password FROM user WHERE tg = ?", tgID).Scan(&login, &encPassword)
@@ -82,6 +83,27 @@ func Update(tgID string, newlogin, newpassword string, key []byte) bool {
 	log.Print("Успешный UPDATE запрос измене пользователь ", tgID)
 
 	return true
+}
+
+func SelectAllForBroadcast() []int {
+	usersID := make([]int, 0, 10)
+
+	rows, err := DB.Query("SELECT chatID FROM user")
+
+	if err != nil {
+		tgbotapi.NewMessage(-4801118127, "🚫Ошибка при чтении из бд данных для рассылки!")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var userID int
+		if err := rows.Scan(&userID); err != nil {
+			continue
+		}
+		usersID = append(usersID, userID)
+	}
+
+	return usersID
 }
 
 func encrypt(text string, key []byte) string {
