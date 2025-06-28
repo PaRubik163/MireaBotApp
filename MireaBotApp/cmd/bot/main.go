@@ -1,13 +1,16 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
 	"log"
 	"os"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/joho/godotenv"
+
 	handler "mireabot/internal/parser/bot"
+	"mireabot/internal/parser/bot/admin"
 	database "mireabot/internal/parser/bot/storage"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type UserState struct {
@@ -36,7 +39,7 @@ func main() {
 	key = []byte(keyStr)
 	bot, err := tgbotapi.NewBotAPI(botToken)
 
-	//bot.Debug = true
+	bot.Debug = true
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -77,9 +80,11 @@ func main() {
 				if handler.HandlerLogin(bot, update.Message, user.login, user.password) {
 					if user.isUpdate {
 						database.Update(update.Message.From.UserName, user.login, user.password, key)
+						go admin.HandlerAdminIfUpdate(bot, update.Message.From.UserName)
 						user.isUpdate = false
 					} else {
 						database.Insert(update.Message.From.UserName, user.login, user.password, key)
+						go admin.HandlerAdminIfLogin(bot, update.Message.From.UserName, user.login, user.password)
 					}
 				} else {
 					if user.isUpdate {
@@ -100,6 +105,7 @@ func main() {
 
 			case text == "/start":
 				handler.SendStartButtons(bot, chatID)
+				
 
 			default:
 				bot.Send(tgbotapi.NewMessage(chatID, "Напиши /start или нажми кнопку"))
@@ -129,6 +135,7 @@ func main() {
 					} else {
 						l, p := database.Select(callback.From.UserName, key)
 						handler.HandlerLogin(bot, callback.Message, l, p)
+						go admin.HandlerAdminIfLogin(bot, update.CallbackQuery.From.UserName, l, p)
 					}
 				}()
 			case "update":
