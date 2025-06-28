@@ -8,21 +8,21 @@ import (
 
 var DB *sql.DB
 
-func InitDB(){
+func InitDB() {
 	var err error
 	DB, err = sql.Open("sqlite3", "./mireabot.db")
 
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Ошибка открытия БД")
 	}
-	stmt, err := DB.Prepare("CREATE TABLE IF NOT EXISTS user (id INTEGER PRIMARY KEY, tg TEXT UNIQUE, login TEXT, password TEXT)")
+	stmt, err := DB.Prepare("CREATE TABLE IF NOT EXISTS user (id INTEGER PRIMARY KEY,chatID INTEGER UNIQUE, tg TEXT UNIQUE, login TEXT, password TEXT)")
 
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Ошибка create запроса")
 	}
 
 	_, err = stmt.Exec()
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Ошибка exec() у create()")
 	}
 
