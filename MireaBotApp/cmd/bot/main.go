@@ -149,8 +149,6 @@ func main() {
 						bot.Send(tgbotapi.NewMessage(chatID, "🔑Введите логин друга:"))
 					}
 				}()
-			default:
-				bot.Send(tgbotapi.NewMessage(chatID, "Непонятное действие"))
 			}
 
 			bot.Request(tgbotapi.NewCallback(callback.ID, ""))
