@@ -31,17 +31,11 @@ func HandlerLogin(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, login, password s
 		}
 
 		time.Sleep(1 * time.Second)
-		deletemsg := tgbotapi.NewDeleteMessage(msg.Chat.ID, sentMsg.MessageID)
-		_, err = bot.Request(deletemsg)
+		editGoodAutarizationMsg := tgbotapi.NewEditMessageText(msg.Chat.ID, sentMsg.MessageID, "✅Авторизация успешна!")
 
+		editGoodAutarization, err := bot.Send(editGoodAutarizationMsg)
 		if err != nil {
-			logrus.Fatalf("Ошибка удаления сообщения", err)
-		}
-
-		sentMsg, err = bot.Send(tgbotapi.NewMessage(msg.Chat.ID, "✅Авторизация успешна!"))
-
-		if err != nil {
-			logrus.Fatalf("Ошибка отправки сообщения HandlerLogin", err)
+			logrus.Fatalf("Ошибка редактирования сообщения об авторизации", err)
 		}
 		//Если мы успешно авторизировались в СДО, то логинимся на сайте посещений
 		client := resty.New()
@@ -55,16 +49,13 @@ func HandlerLogin(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, login, password s
 		//Конечно, нужно декодировать в структуру из прото, но я пока не понимаю как
 		res, ok := attend.ParseGrpcResponse(client)
 		if !ok {
-			time.Sleep(2 * time.Second)
-			deletemsg := tgbotapi.NewDeleteMessage(msg.Chat.ID, sentMsg.MessageID)
-			_, err = bot.Request(deletemsg)
+			time.Sleep(1 * time.Second)
+			editBadAutarizationMsg := tgbotapi.NewEditMessageText(msg.Chat.ID, sentMsg.MessageID, "❌Ошибка поиска предметов и баллов. Приносим свои извинения!")
+			_, err = bot.Request(editBadAutarizationMsg)
 
 			if err != nil {
 				logrus.Fatalf("Ошибка удаления сообщения", err)
 			}
-
-			reply := tgbotapi.NewMessage(msg.Chat.ID, "❌Ошибка поиска предметов и баллов. Приносим свои извинения!")
-			bot.Send(reply)
 		}
 
 		//Здесь я все названия и сумму баллов по каждому предмету заношу в одно сообщение
@@ -87,21 +78,23 @@ func HandlerLogin(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, login, password s
 
 			sum := current_control + attendance
 			//Окрашивание
-			if sum >= 40 {
+			switch {
+			case sum >= 40:
 				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "🔋")
-			}
-			if sum < 40 && sum >= 25 {
+			case sum < 40 && sum >= 25:
 				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "🔶")
-			}
-			if sum < 25 {
+			case sum < 25:
 				message += fmt.Sprintf("%s %.1f %s\n", name, sum, "🚫")
 			}
 		}
 
-		keyboard := buttonsForGoodAutarization
-		lastReply := tgbotapi.NewMessage(msg.Chat.ID, message+"\n\n👉Логин: "+login+"\n🤐Пароль: "+password)
-		lastReply.ReplyMarkup = keyboard()
-		bot.Send(lastReply)
+		keyboard := buttonsForGoodAutarization()
+		lastReply := tgbotapi.NewEditMessageText(msg.Chat.ID, editGoodAutarization.MessageID, message+"\n\n👉Логин: "+login+"\n🤐Пароль: "+password)
+		lastReply.ReplyMarkup = &keyboard
+
+		if _, err := bot.Send(lastReply); err != nil {
+			logrus.Fatal("Ошибка отправки сообщения с баллами")
+		}
 
 		return true
 	}
