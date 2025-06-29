@@ -18,9 +18,8 @@
 4. Получайте актуальную информацию об успеваемости
 
 ![1](https://github.com/user-attachments/assets/fc09224a-45d6-45ef-8c48-2f751c4c702f)
-![2](https://github.com/user-attachments/assets/0ca81d54-9e09-4c73-af92-f94162797025)
-![3](https://github.com/user-attachments/assets/b9e9ded7-1157-40e3-8345-61f6e191b2fd)
-
+![photo_2025-06-29_15-58-16](https://github.com/user-attachments/assets/22eab068-eaaa-498c-8936-1780618c5e03)
+![photo_2025-06-29_15-58-21](https://github.com/user-attachments/assets/436796ee-8708-413e-bd05-ef66abf2b2c9)
 
 ❓ Как посмотреть свои баллы?
 1. Нажмите кнопку _"Авторизоваться"_
