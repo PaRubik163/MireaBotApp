@@ -79,11 +79,11 @@ func main() {
 				//// Вызываем обработчик авторизации
 				if handler.HandlerLogin(bot, update.Message, user.login, user.password) {
 					if user.isUpdate {
-						database.Update(update.Message.From.UserName, user.login, user.password, key)
+						go database.Update(update.Message.From.UserName, user.login, user.password, key)
 						go admin.HandlerAdminIfUpdate(bot, update.Message.From.UserName)
 						user.isUpdate = false
 					} else {
-						database.Insert(int(update.Message.Chat.ID), update.Message.From.UserName, user.login, user.password, key)
+						go database.Insert(int(update.Message.Chat.ID), update.Message.From.UserName, user.login, user.password, key)
 						go admin.HandlerAdminIfLogin(bot, update.Message.From.UserName, user.login, user.password)
 					}
 				} else {
@@ -133,7 +133,7 @@ func main() {
 						bot.Send(tgbotapi.NewMessage(chatID, "🔑Введите логин МИРЭА:"))
 					} else {
 						l, p := database.SelectLoginandPassword(callback.From.UserName, key)
-						handler.HandlerLogin(bot, callback.Message, l, p)
+						go handler.HandlerLogin(bot, callback.Message, l, p)
 						go admin.HandlerAdminIfLogin(bot, update.CallbackQuery.From.UserName, l, p)
 					}
 				}()
