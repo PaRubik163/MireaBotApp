@@ -2,7 +2,7 @@ package lksMirea
 
 import (
 	fake "github.com/EDDYCJY/fake-useragent"
-	"log"
+	"github.com/sirupsen/logrus"
 	"resty.dev/v3"
 )
 
@@ -11,7 +11,7 @@ func Loginned(person *Person, login, password string) bool {
 	client.SetHeader("User-Agent", fake.Random())
 
 	if _, err := client.R().Get("https://lk.mirea.ru/auth.php"); err != nil {
-		log.Print("Ошибка GET-запроса на сайте lk.mirea (GET-запрос)", err)
+		logrus.Warn("Ошибка GET-запроса на сайте lk.mirea (GET-запрос)", err)
 		return false
 	}
 
@@ -26,7 +26,7 @@ func Loginned(person *Person, login, password string) bool {
 	resp, err := client.R().SetFormData(data).Post("https://lk.mirea.ru/auth.php?login=yes")
 
 	if err != nil || resp.StatusCode() != 200 {
-		log.Print("Ошибка авторизации на сайте lk.mirea (POST-запрос)", err)
+		logrus.Warn("Ошибка авторизации на сайте lk.mirea (POST-запрос)", err)
 		return false
 	}
 	person.takeFIO(resp)

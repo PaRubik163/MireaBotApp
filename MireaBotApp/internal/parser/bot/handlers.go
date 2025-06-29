@@ -2,7 +2,7 @@ package bot
 
 import (
 	"fmt"
-	"log"
+	"github.com/sirupsen/logrus"
 	attend "mireabot/internal/parser/attendance"
 	lk "mireabot/internal/parser/lksMirea"
 	"strings"
@@ -27,7 +27,7 @@ func HandlerLogin(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, login, password s
 		sentMsg, err := bot.Send(reply)
 
 		if err != nil {
-			log.Fatalf("Ошибка отправки сообщения HandlerLogin", err)
+			logrus.Fatalf("Ошибка отправки сообщения HandlerLogin", err)
 		}
 
 		time.Sleep(1 * time.Second)
@@ -35,20 +35,20 @@ func HandlerLogin(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, login, password s
 		_, err = bot.Request(deletemsg)
 
 		if err != nil {
-			log.Fatalf("Ошибка удаления сообщения", err)
+			logrus.Fatalf("Ошибка удаления сообщения", err)
 		}
 
 		sentMsg, err = bot.Send(tgbotapi.NewMessage(msg.Chat.ID, "✅Авторизация успешна!"))
 
 		if err != nil {
-			log.Fatalf("Ошибка отправки сообщения HandlerLogin", err)
+			logrus.Fatalf("Ошибка отправки сообщения HandlerLogin", err)
 		}
 		//Если мы успешно авторизировались в СДО, то логинимся на сайте посещений
 		client := resty.New()
 
 		err = attend.Logging(client, login, password)
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 
 		//авторизация->gRPC запрос на первый сервис, чтобы получить ID сервис->gRPC запрос, чтобы получить данные RatingScore
@@ -60,7 +60,7 @@ func HandlerLogin(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, login, password s
 			_, err = bot.Request(deletemsg)
 
 			if err != nil {
-				log.Fatalf("Ошибка удаления сообщения", err)
+				logrus.Fatalf("Ошибка удаления сообщения", err)
 			}
 
 			reply := tgbotapi.NewMessage(msg.Chat.ID, "❌Ошибка поиска предметов и баллов. Приносим свои извинения!")
@@ -72,17 +72,17 @@ func HandlerLogin(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, login, password s
 		for _, item := range res {
 			name, ok := item["name"].(string) //Названия предметов
 			if !ok {
-				log.Fatal("Нет такого поля name")
+				logrus.Fatal("Нет такого поля name")
 			}
 
 			current_control, ok := item["current_control"].(float64) //Семестровый контроль
 			if !ok {
-				log.Fatal("Нет такого поля current_control")
+				logrus.Fatal("Нет такого поля current_control")
 			}
 
 			attendance, ok := item["attendance"].(float64) //Баллы за посещаемость
 			if !ok {
-				log.Fatal("Нет такого поля attendance")
+				logrus.Fatal("Нет такого поля attendance")
 			}
 
 			sum := current_control + attendance
@@ -126,6 +126,6 @@ func BadAutorization(bot *tgbotapi.BotAPI, msg *tgbotapi.Message) {
 	reply.ReplyMarkup = buttonsForBadAutarization()
 
 	if _, err := bot.Send(reply); err != nil {
-		log.Fatalf("Ошибка отправки сообщения", err)
+		logrus.Fatalf("Ошибка отправки сообщения", err)
 	}
 }
