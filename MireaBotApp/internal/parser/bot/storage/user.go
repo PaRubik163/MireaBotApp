@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sirupsen/logrus"
 	"io"
 	"log"
 )
@@ -15,7 +16,7 @@ func IsExists(tgID string) bool {
 	stmt, err := DB.Prepare("SELECT 1 FROM user WHERE tg = ? LIMIT 1")
 
 	if err != nil {
-		log.Fatalf("Ошибка exists запроса")
+		logrus.Fatalf("Ошибка exists запроса")
 	}
 
 	stmt.QueryRow(tgID).Scan(&exists)
@@ -31,7 +32,7 @@ func Insert(chatID int, tgId, login, password string, key []byte) {
 	stmt, err := DB.Prepare("INSERT INTO user (chatID, tg, login, password) VALUES (?, ?, ?, ?)")
 
 	if err != nil {
-		log.Fatalf("Ошибка INSERT запроса")
+		logrus.Fatalf("Ошибка INSERT запроса")
 	}
 
 	cipherPassword := encrypt(password, key)
@@ -39,7 +40,7 @@ func Insert(chatID int, tgId, login, password string, key []byte) {
 	_, err = stmt.Exec(chatID, tgId, login, cipherPassword)
 
 	if err != nil {
-		log.Fatalf("Ошибка INSERT.exec() запроса")
+		logrus.Fatalf("Ошибка INSERT.exec() запроса")
 	}
 
 	log.Println("Успешный INSERT запрос добавлен", tgId, login)
@@ -60,7 +61,7 @@ func SelectLoginandPassword(tgID string, key []byte) (string, string) {
 		return "", ""
 	}
 
-	log.Println("Успешный SELECT запрос вытащен", tgID, login)
+	logrus.Info("Успешный SELECT запрос вытащен", tgID, login)
 
 	return login, password
 }
@@ -69,18 +70,18 @@ func Update(tgID string, newlogin, newpassword string, key []byte) bool {
 	stmt, err := DB.Prepare("UPDATE user SET login = ?, password = ? WHERE tg = ?")
 
 	if err != nil {
-		log.Fatalf("Ошибка UPDATE запроса")
+		logrus.Fatalf("Ошибка UPDATE запроса")
 	}
 
 	cipherNewPassword := encrypt(newpassword, key)
 
 	_, err = stmt.Exec(newlogin, cipherNewPassword, tgID)
 	if err != nil {
-		log.Fatalf("Ошибка UPDATE.EXEC() запроса")
+		logrus.Fatalf("Ошибка UPDATE.EXEC() запроса")
 		return false
 	}
 
-	log.Print("Успешный UPDATE запрос измене пользователь ", tgID)
+	logrus.Info("Успешный UPDATE запрос измене пользователь ", tgID)
 
 	return true
 }
@@ -111,7 +112,7 @@ func encrypt(text string, key []byte) string {
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		log.Fatalf("Ошибка NewCipher encript")
+		logrus.Fatalf("Ошибка NewCipher encript")
 	}
 
 	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
@@ -119,7 +120,7 @@ func encrypt(text string, key []byte) string {
 
 	// Заполняем IV случайными байтами
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		log.Fatal("Ошибка io.Readfull")
+		logrus.Fatal("Ошибка io.Readfull")
 	}
 
 	stream := cipher.NewCFBEncrypter(block, iv)
@@ -131,16 +132,16 @@ func encrypt(text string, key []byte) string {
 func decrypt(cryptoText string, key []byte) string {
 	ciphertext, err := base64.URLEncoding.DecodeString(cryptoText)
 	if err != nil {
-		log.Fatal("Ошибка base64.DecodetoString()")
+		logrus.Fatal("Ошибка base64.DecodetoString()")
 	}
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		log.Fatal("Ошибка newChiper decode")
+		logrus.Fatal("Ошибка newChiper decode")
 	}
 
 	if len(ciphertext) < aes.BlockSize {
-		log.Println("ciphertext очень короткий")
+		logrus.Info("ciphertext очень короткий")
 		return ""
 	}
 

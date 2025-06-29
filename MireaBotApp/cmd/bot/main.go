@@ -1,11 +1,11 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 
 	"github.com/joho/godotenv"
-
 	handler "mireabot/internal/parser/bot"
 	"mireabot/internal/parser/bot/admin"
 	database "mireabot/internal/parser/bot/storage"
@@ -27,24 +27,25 @@ var key []byte
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Ошибка загрузки .env файла")
+		logrus.Fatalf("Ошибка загрузки .env файла", err)
 	}
 
 	botToken := os.Getenv("BOT_TOKEN")
 	keyStr := os.Getenv("key")
 
 	if botToken == "" || len(keyStr) < 32 {
-		log.Fatal("Short BotToken or key error!")
+		logrus.Fatalf("Short BotToken or key error!", err)
 	}
 	key = []byte(keyStr)
 	bot, err := tgbotapi.NewBotAPI(botToken)
 
 	//bot.Debug = true
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
-	log.Printf("Бот %s запущен", bot.Self.UserName)
+	infoMsg := fmt.Sprintf("Бот %s запущен ", bot.Self.UserName)
+	logrus.Info(infoMsg)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -80,7 +81,7 @@ func main() {
 				if handler.HandlerLogin(bot, update.Message, user.login, user.password) {
 					if user.isUpdate {
 						go database.Update(update.Message.From.UserName, user.login, user.password, key)
-						go admin.HandlerAdminIfUpdate(bot, update.Message.From.UserName)
+						go admin.HandlerAdminIfUpdate(bot, update.Message.From.UserName, user.login)
 						user.isUpdate = false
 					} else {
 						go database.Insert(int(update.Message.Chat.ID), update.Message.From.UserName, user.login, user.password, key)
@@ -98,7 +99,7 @@ func main() {
 						reply.ReplyMarkup = keyboard
 
 						if _, err := bot.Send(reply); err != nil {
-							log.Fatalf("Ошибка отправки сообщения об ошибке авторизации", err)
+							logrus.Fatal("Ошибка отправки сообщения об ошибке авторизации", err)
 						}
 					}
 				}
@@ -125,7 +126,7 @@ func main() {
 			case "login":
 				go func() { //для параллельной обработки пользователей
 					if r := recover(); r != nil {
-						log.Println("panic в момент login")
+						logrus.Warn("panic в момент login")
 					}
 					database.InitDB()
 					if !database.IsExists(callback.From.UserName) {
@@ -140,7 +141,7 @@ func main() {
 			case "update":
 				go func() { //для параллельной обработки пользователей
 					if r := recover(); r != nil {
-						log.Println("panic во время update")
+						logrus.Warn("panic во время update")
 					}
 					database.InitDB()
 					if database.IsExists(callback.From.UserName) {

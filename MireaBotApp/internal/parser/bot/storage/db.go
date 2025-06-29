@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/sirupsen/logrus"
 	"log"
 )
 
@@ -18,13 +19,13 @@ func InitDB() {
 	stmt, err := DB.Prepare("CREATE TABLE IF NOT EXISTS user (id INTEGER PRIMARY KEY,chatID INTEGER UNIQUE, tg TEXT UNIQUE, login TEXT, password TEXT)")
 
 	if err != nil {
-		log.Fatalf("Ошибка create запроса")
+		logrus.Fatal("Ошибка create запроса")
 	}
 
 	_, err = stmt.Exec()
 	if err != nil {
-		log.Fatalf("Ошибка exec() у create()")
+		logrus.Fatal("Ошибка exec() у create()")
 	}
 
-	log.Print("БД инициализированна")
+	logrus.Info("БД инициализированна")
 }
