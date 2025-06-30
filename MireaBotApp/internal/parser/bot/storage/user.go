@@ -92,7 +92,7 @@ func SelectAllForBroadcast() []int {
 	rows, err := DB.Query("SELECT chatID FROM user")
 
 	if err != nil {
-		tgbotapi.NewMessage(-4801118127, "🚫Ошибка при чтении из бд данных для рассылки!")
+		tgbotapi.NewMessage(-1002594657207, "🚫Ошибка при чтении из бд данных для рассылки!")
 	}
 	defer rows.Close()
 
