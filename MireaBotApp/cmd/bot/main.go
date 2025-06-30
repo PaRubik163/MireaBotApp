@@ -56,6 +56,10 @@ func main() {
 
 		// Обработка сообщений от пользователя (текст)
 		if update.Message != nil {
+			if update.Message.ReplyToMessage != nil{
+				admin.HandlForceReply(bot, update.Message)
+			}
+			
 			chatID := update.Message.Chat.ID
 			text := update.Message.Text
 
@@ -106,6 +110,9 @@ func main() {
 
 			case text == "/start":
 				handler.SendStartButtons(bot, chatID)
+			
+			case text == "/broadcast":
+				admin.HandlerBroadcast(bot, update)
 
 			default:
 				bot.Send(tgbotapi.NewMessage(chatID, "Напиши /start или нажми кнопку"))
