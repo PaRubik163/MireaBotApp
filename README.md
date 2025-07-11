@@ -36,5 +36,5 @@
 
 Контакты
 По всем вопросам:
-Telegram: @laflame810
+Telegram: @LaFlame2018
 Gmail: gormarkan40203@gmail.com
